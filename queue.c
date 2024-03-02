@@ -11,37 +11,110 @@
  */
 
 
+/* Create an element */
+element_t *ele_new(char *s)
+{
+    element_t *ele = (element_t *) malloc(sizeof(element_t));
+    if (!ele)
+        return NULL;
+
+    ele->value = strdup(s);
+    if (!ele->value) {
+        free(ele);
+        return NULL;
+    }
+
+
+    INIT_LIST_HEAD(&ele->list);
+    return ele;
+}
+
 /* Create an empty queue */
 struct list_head *q_new()
 {
-    return NULL;
+    struct list_head *head = malloc(sizeof(struct list_head));
+    if (!head)
+        return NULL;
+
+    INIT_LIST_HEAD(head);
+    return head;
 }
 
 /* Free all storage used by queue */
-void q_free(struct list_head *head) {}
+void q_free(struct list_head *head)
+{
+    if (!head)
+        return;
+
+    element_t *entry, *tmp;
+    list_for_each_entry_safe (entry, tmp, head, list) {
+        list_del(&entry->list);
+        free(entry->value);
+        free(entry);
+    }
+
+    free(head);
+}
 
 /* Insert an element at head of queue */
 bool q_insert_head(struct list_head *head, char *s)
 {
+    if (!head)
+        return false;
+
+    element_t *ele = ele_new(s);
+    if (!ele)
+        return false;
+
+    list_add(&ele->list, head);
     return true;
 }
 
 /* Insert an element at tail of queue */
 bool q_insert_tail(struct list_head *head, char *s)
 {
+    if (!head)
+        return false;
+
+    element_t *ele = ele_new(s);
+    if (!ele)
+        return false;
+
+    list_add_tail(&ele->list, head);
+
     return true;
 }
 
 /* Remove an element from head of queue */
 element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 {
-    return NULL;
+    if (list_empty(head) || !sp)
+        return NULL;
+
+    element_t *first_elem = list_first_entry(head, element_t, list);
+    if (bufsize > 0) {
+        strncpy(sp, first_elem->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';
+    }
+
+    list_del(&first_elem->list);
+    return first_elem;
 }
 
 /* Remove an element from tail of queue */
 element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 {
-    return NULL;
+    if (list_empty(head) || !sp)
+        return NULL;
+
+    element_t *tail_elem = list_last_entry(head, element_t, list);
+    if (bufsize > 0) {
+        strncpy(sp, tail_elem->value, bufsize - 1);
+        sp[bufsize - 1] = '\0';
+    }
+
+    list_del(&tail_elem->list);
+    return tail_elem;
 }
 
 /* Return number of elements in queue */
@@ -61,7 +134,20 @@ int q_size(struct list_head *head)
 /* Delete the middle node in queue */
 bool q_delete_mid(struct list_head *head)
 {
-    // https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
+    if (!head || list_empty(head))
+        return false;
+
+    struct list_head *fast = head->next;
+    struct list_head *slow = head->next;
+    while (fast != head && fast->next != head) {
+        fast = fast->next->next;
+        slow = slow->next;
+    }
+
+    list_del(slow);
+    element_t *entry = list_entry(slow, element_t, list);
+    free(entry->value);
+    free(entry);
     return true;
 }
 
