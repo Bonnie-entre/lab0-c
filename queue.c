@@ -165,7 +165,15 @@ void q_swap(struct list_head *head)
 }
 
 /* Reverse elements in queue */
-void q_reverse(struct list_head *head) {}
+void q_reverse(struct list_head *head)
+{
+    if (!head || list_empty(head))
+        return;
+
+    struct list_head *cur, *next;
+    list_for_each_safe (cur, next, head)
+        list_move(cur, head);
+}
 
 /* Reverse the nodes of the list k at a time */
 void q_reverseK(struct list_head *head, int k)
@@ -180,16 +188,54 @@ void q_sort(struct list_head *head, bool descend) {}
  * the right side of it */
 int q_ascend(struct list_head *head)
 {
-    // https://leetcode.com/problems/remove-nodes-from-linked-list/
-    return 0;
+    if (!head || list_empty(head))
+        return 0;
+
+    char *max_val = NULL;
+    struct list_head *cur, *safe;
+    // after reverse, keep this big & delete ones bigger than it
+    for (cur = (head)->prev, safe = cur->prev; cur != (head);
+         cur = safe, safe = cur->prev) {
+        element_t *cur_ele = list_entry(cur, element_t, list);
+        if (cur != head->prev && strcmp(max_val, cur_ele->value) < 0) {
+            list_del(cur);
+            free(cur_ele->value);
+            free(cur_ele);
+        } else {
+            free(max_val);
+            max_val = strdup(cur_ele->value);
+        }
+    }
+
+    free(max_val);
+    return q_size(head);
 }
 
 /* Remove every node which has a node with a strictly greater value anywhere to
  * the right side of it */
 int q_descend(struct list_head *head)
 {
-    // https://leetcode.com/problems/remove-nodes-from-linked-list/
-    return 0;
+    if (!head || list_empty(head))
+        return 0;
+
+    char *max_val = NULL;
+    struct list_head *cur, *safe;
+    // after reverse, keep this big & delete ones bigger than it
+    for (cur = (head)->prev, safe = cur->prev; cur != (head);
+         cur = safe, safe = cur->prev) {
+        element_t *cur_ele = list_entry(cur, element_t, list);
+        if (cur != head->prev && strcmp(max_val, cur_ele->value) > 0) {
+            list_del(cur);
+            free(cur_ele->value);
+            free(cur_ele);
+        } else {
+            free(max_val);
+            max_val = strdup(cur_ele->value);
+        }
+    }
+
+    free(max_val);
+    return q_size(head);
 }
 
 /* Merge all the queues into one sorted queue, which is in ascending/descending
