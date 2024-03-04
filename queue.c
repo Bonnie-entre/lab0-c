@@ -161,7 +161,10 @@ bool q_delete_dup(struct list_head *head)
 /* Swap every two adjacent nodes */
 void q_swap(struct list_head *head)
 {
-    // https://leetcode.com/problems/swap-nodes-in-pairs/
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+
+    q_reverseK(head, 2);
 }
 
 /* Reverse elements in queue */
@@ -176,13 +179,62 @@ void q_reverse(struct list_head *head)
 }
 
 /* Reverse the nodes of the list k at a time */
-void q_reverseK(struct list_head *head, int k)
+void q_reverseK(struct list_head *head, int K)
 {
-    // https://leetcode.com/problems/reverse-nodes-in-k-group/
+    int k = K;
+    int cnt = q_size(head);
+    struct list_head tmp;
+    // struct list_head **last = &head->prev;
+    while (cnt > 0) {
+        struct list_head *node = head;
+        INIT_LIST_HEAD(&tmp);
+        while (k--) {
+            node = node->next;
+        }
+        list_cut_position(&tmp, head, node);
+        if (cnt / K)
+            q_reverse(&tmp);
+        list_splice_tail(&tmp, head);
+
+        cnt -= K;
+        k = (cnt / K) ? K : cnt;
+    }
 }
 
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+
+    struct list_head list_less, list_greater;
+    INIT_LIST_HEAD(&list_less);
+    INIT_LIST_HEAD(&list_greater);
+
+    element_t *pivot;
+    pivot = list_first_entry(head, element_t, list);
+    list_del(&pivot->list);
+
+    element_t *cur, *safe;
+    list_for_each_entry_safe (cur, safe, head, list) {
+        if (strcmp(cur->value, pivot->value) < 0)
+            list_move_tail(&cur->list, &list_less);
+        else
+            list_move_tail(&cur->list, &list_greater);
+    }
+
+    q_sort(&list_less, descend);
+    q_sort(&list_greater, descend);
+
+    list_add(&pivot->list, head);
+    if (descend) {
+        list_splice(&list_greater, head);
+        list_splice_tail(&list_less, head);
+    } else {
+        list_splice(&list_less, head);
+        list_splice_tail(&list_greater, head);
+    }
+}
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
