@@ -294,6 +294,54 @@ int q_descend(struct list_head *head)
  * order */
 int q_merge(struct list_head *head, bool descend)
 {
-    // https://leetcode.com/problems/merge-k-sorted-lists/
-    return 0;
+    if (!head || list_empty(head))
+        return 0;
+    else if (list_is_singular(head))
+        return list_entry(head->next, queue_contex_t, chain)->size;
+
+    queue_contex_t *queue_context =
+        list_entry(head->next, queue_contex_t, chain);
+    struct list_head *first_queue = queue_context->q;
+
+    // go through all chain_of_queue, merge chains one by one
+    struct list_head *cur_chain, *next_chain;
+    list_for_each_safe (cur_chain, next_chain, head) {
+        // the first queue of the chain
+        if (cur_chain == head->next) {
+            continue;
+        }
+
+        // merge other queue to the first queue of the chain
+        queue_contex_t *cur_queue_context =
+            list_entry(cur_chain, queue_contex_t, chain);
+        struct list_head *cur_queue = cur_queue_context->q;
+        struct list_head *cur_ele, *next_ele;
+        struct list_head *cur_ele_mergedqueue = cur_queue->next;
+        list_for_each_safe (
+            cur_ele, next_ele,
+            first_queue) {  // go through element_t of first_queue
+
+            char *first_value = list_entry(cur_ele, element_t, list)->value;
+            while (
+                cur_ele_mergedqueue != cur_queue &&  // element_t of cur_queue
+                strcmp(list_entry(cur_ele_mergedqueue, element_t, list)->value,
+                       first_value) < 0) {
+                struct list_head *del = cur_ele_mergedqueue;
+                cur_ele_mergedqueue = cur_ele_mergedqueue->next;
+                list_del(del);
+                list_add_tail(del,
+                              cur_ele);  // add before cur_ele == list_add_tail
+            }
+        }
+
+        list_splice_tail_init(
+            cur_queue, first_queue);  // would check cur_queue empty first
+    }
+
+
+    if (descend) {
+        q_reverse(first_queue);
+    }
+
+    return q_size(first_queue);
 }
